@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8"> <!-- vs code 以編碼儲存(UTF-8) -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAP</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <link rel="stylesheet" type="text/css" href="map.css">
+    <script src="leaflet-kml-master/L.KML.js"></script> <!-- KML -->
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <!-- fetch Way -->
+    <!-- <script type="module" src="fetchWay/kmlSelect.js"></script>
+    <script type="module" src="fetchWay/describe.js"></script> -->
+    <!-- import Way -->
+    <script type="module" src="importWay/load.js"></script>
+    <script type="module" src="importWay/compare.js"></script>
+    <script type="module" src="importWay/chart.js"></script>
+    <script>
+        // Fetch regions and populate the "Choose Region" dropdown
+        fetch('/regions')
+            .then(response => response.json())
+            .then(data => {
+                const regionSelect = document.getElementById('Region');
+                data.forEach(region => {
+                    const option = document.createElement('option');
+                    option.value = region.code; 
+                    option.text = region.regionname;
+                    regionSelect.appendChild(option);
+                });
+            });
+    </script>
+</head>
+
+<body><!--style="background-color: #A5B8D8;"-->
+    <div class="container" style="margin-left: auto;margin-right: auto;">
+        <div class="row">
+            <nav class="navbar navbar-light " style="background-color: #e3f2fd;">
+                <div class="container-fluid" style="padding-right: 0px;">
+                    <a class="navbar-brand fw-bold d-flex align-items-center" height="40">
+                        <!--"d-flex align-items-center"讓文字垂直置中-->
+                        <img src="water_damage_black_24dp.svg" alt="" width="40" height="40">
+                        淹水比對與歷史調查系統
+                    </a>
+                </div>
+            </nav>
+        </div>
+        <div class="row">
+            <div class="col-md-8 col-sm-12 mobile" style="height:90vh;padding-top: 12px;"><!--flex: auto;-->
+                <div id="map"></div>
+            </div>
+            <div class="col-md-4 col-sm-12">
+                <div class="row" style="margin-bottom: 12px;margin-top: 12px;">
+                    <select class="form-select" aria-label="Default select example" id="Region">
+                        <option selected>Choose Region</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <select class="form-select" aria-label="Default select example" id="Case">
+                        <option selected>Choose Case</option>
+                    </select>
+                </div>
+                <div class="row" style="padding-top: 12px;padding-bottom: 1px;">
+                    <canvas id="myChart"
+                        style="height: 300px;padding-right: 5px;padding-left: 0px; background-color: #e3f2fd;"></canvas>
+                </div>
+                <div class="row">
+
+                    <table class="table" style="background-color: white;">
+                        <thead>
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col">Case</th>
+                                <th scope="col" style="font-size: 12px;">Rainfall<br>(mm)</th><!--Precipitation(mm)-->
+                                <th scope="col" style="font-size: 12px;">Area<br>(ha)</th><!--Inundation Area(ha)-->
+                                <th scope="col" style="font-size: 12px;">Depth<br>(m)</th><!--Inundation Depth(m)-->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-danger" style="color: red;">
+                                <th scope="row">#</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-warning" style="color:rgb(255,140,0);">
+                                <th scope="row">1</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-primary" style="color: blue;">
+                                <th scope="row">2</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-success" style="color: green;width: auto">
+                                <th scope="row">3</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="map.js"></script>
+    <script>
+        const regionSelect = document.getElementById('Region');
+        const caseSelect = document.getElementById('Case');
+
+        // Event listener for region selection
+        regionSelect.addEventListener('change', function () {
+            const selectedRegion = encodeURIComponent(regionSelect.options[regionSelect.selectedIndex].text);
+            // console.log("selectedRegion: "+selectedRegion);
+
+            // Fetch cases for the selected region
+            fetch(`/cases?region=${selectedRegion}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing options
+                    // console.log(data);
+                    caseSelect.innerHTML = '<option selected>Choose Case</option>';
+
+                    // Populate the "Choose Case" dropdown with the retrieved cases
+                    data.forEach(caseData => {
+                        const option = document.createElement('option');
+                        option.value = caseData.caseseq;
+                        option.text = caseData.casename;
+                        caseSelect.appendChild(option);
+                        // console.log(`caseData.caseseq: ${caseData.caseseq}`);
+                        // console.log(`option.value: ${option.value}`);
+                    });
+                })
+                .catch(error => console.error('Error fetching cases', error));
+        });
+    </script>
+</body>
+
+</html>
