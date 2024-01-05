@@ -28,20 +28,7 @@
     <script type="module" src="importWay/load.js"></script>
     <script type="module" src="importWay/compare.js"></script>
     <script type="module" src="importWay/chart.js"></script>
-    <script>
-        // Fetch regions and populate the "Choose Region" dropdown
-        fetch('/regions')
-            .then(response => response.json())
-            .then(data => {
-                const regionSelect = document.getElementById('Region');
-                data.forEach(region => {
-                    const option = document.createElement('option');
-                    option.value = region.code; 
-                    option.text = region.regionname;
-                    regionSelect.appendChild(option);
-                });
-            });
-    </script>
+    <script type="module" src="load.js"></script>
 </head>
 
 <body><!--style="background-color: #A5B8D8;"-->
@@ -125,36 +112,6 @@
         </div>
     </div>
     <script type="text/javascript" src="map.js"></script>
-    <script>
-        const regionSelect = document.getElementById('Region');
-        const caseSelect = document.getElementById('Case');
-
-        // Event listener for region selection
-        regionSelect.addEventListener('change', function () {
-            const selectedRegion = encodeURIComponent(regionSelect.options[regionSelect.selectedIndex].text);
-            // console.log("selectedRegion: "+selectedRegion);
-
-            // Fetch cases for the selected region
-            fetch(`/cases?region=${selectedRegion}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Clear existing options
-                    // console.log(data);
-                    caseSelect.innerHTML = '<option selected>Choose Case</option>';
-
-                    // Populate the "Choose Case" dropdown with the retrieved cases
-                    data.forEach(caseData => {
-                        const option = document.createElement('option');
-                        option.value = caseData.caseseq;
-                        option.text = caseData.casename;
-                        caseSelect.appendChild(option);
-                        // console.log(`caseData.caseseq: ${caseData.caseseq}`);
-                        // console.log(`option.value: ${option.value}`);
-                    });
-                })
-                .catch(error => console.error('Error fetching cases', error));
-        });
-    </script>
 </body>
 
 </html>
