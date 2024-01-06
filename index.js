@@ -54,11 +54,10 @@ app.get('/details', async (req, res) => {
         const result = await pool.query(`
             SELECT view_24hr_max.casename,view_24hr_max.caseseq, hr1, hr3, hr6, hr12, hr24,depth,ROUND((R1.ha::NUMERIC),1) AS ha
             FROM view_24hr_max,floodcase,(
-                select regioncode,floodarea.caseseq,sum(ST_Area(geom::geography))/10000 as ha
-                from floodarea
+                SELECT regioncode,floodarea.caseseq,sum(ST_Area(geom::geography))/10000 as ha
+                FROM floodarea
                 GROUP BY regioncode,caseseq
-                order by regioncode,caseseq
-            ) R1
+                ORDER BY regioncode,caseseq) R1
             WHERE  view_24hr_max.caseseq = floodcase.seq
             AND R1.regioncode = view_24hr_max.regioncode
             AND R1.caseseq = view_24hr_max.caseseq
