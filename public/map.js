@@ -6,6 +6,71 @@ var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 L.control.scale().addTo(map);
 
+const regionSelect = document.getElementById('Region');
+const caseSelect = document.getElementById('Case');
+caseSelect.addEventListener('change',function(){
+    initMAP();
+        // new Promise(resolve => setTimeout(resolve, 100)); // 延遲 100 毫秒
+    const selectedRegion = regionSelect.value;
+    const selectedCase = caseSelect.value;
+    fetch(`/spatial?region=${selectedRegion}&case=${selectedCase}`)
+    .then(response => response.json())
+    .then(data => {
+        //將空間數據加到地圖
+        data.forEach(feature => {
+            // console.log(feature.geomjson);
+            const geometry = JSON.parse(feature.geomjson);
+            L.geoJSON(geometry, {
+                style: function () {
+                    return {
+                        color: 'red',
+                        weight: 2,
+                        opacity: 1
+                    };
+                }
+            }).addTo(map);
+        });
+        // console.log('Data:', data);
+    });
+});
+
+regionSelect.addEventListener('change',initMAP);
+
+function initMAP() {
+    // 清空地圖上的所有圖層
+    map.eachLayer(function (layer) {
+        if (layer instanceof L.GeoJSON) {
+            map.removeLayer(layer);
+        }
+    });
+}
+/*
+//動態變色
+style: function (feature) {
+    const category = feature.properties.category;
+    let color;
+
+    // 根據 category 設置不同的顏色
+    if (category === 'A') {
+        color = 'red';
+    } else if (category === 'B') {
+        color = 'blue';
+    } else {
+        color = 'green';
+    }
+
+    return {
+        color: color,
+        weight: 2,
+        opacity: 0.5,
+        fillOpacity: 0
+    };
+}
+*/
+
+
+//------------------舊方法KML------------------
+/*
 // Load kml file 主要事件
 const select = document.getElementById("kmlFileSelect");
 
@@ -220,3 +285,4 @@ addEventListener("change", function (event) {
         }
     }
 });
+*/

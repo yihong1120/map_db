@@ -12,6 +12,9 @@ const pool = new Pool({
     port: 5432, // PostgreSQL port
 });
 
+// 定義全局變量來存儲數據
+let detailsData = null;
+
 app.use(express.static('public'));
 
 app.get('/regions', async (req, res) => {
@@ -37,7 +40,6 @@ app.get('/cases', async (req, res) => {
             GROUP BY regionname,casedate,casename,caseseq
             ORDER BY  floodcase.casedate;
         `, [selectedRegion]);
-
         res.json(result.rows);
     } catch (error) {
         console.error('Error executing query', error);
@@ -50,9 +52,8 @@ app.get('/details', async (req, res) => {
     try {
         const selectedRegion = req.query.region;
         const selectedCase = req.query.case;
-
         const result = await pool.query(`
-            SELECT view_24hr_max.casename,view_24hr_max.caseseq, hr1, hr3, hr6, hr12, hr24,depth,ROUND((R1.ha::NUMERIC),1) AS ha
+            SELECT view_24hr_max.casename,view_24hr_max.caseseq, hr1, hr3, hr6, hr12, hr24,depth,ROUND((R1.ha::NUMERIC),1) AS ha, view_24hr_max.regioncode AS region
             FROM view_24hr_max,floodcase,(
                 SELECT regioncode,floodarea.caseseq,sum(ST_Area(geom::geography))/10000 as ha
                 FROM floodarea
@@ -66,6 +67,10 @@ app.get('/details', async (req, res) => {
             ORDER BY ABS(hr24 - (SELECT hr24 FROM view_24hr_max WHERE regioncode = $1 AND caseseq = $2 ))
             LIMIT 4;
         `, [selectedRegion, selectedCase]);
+
+        // 存儲數據到全局變量
+        detailsData = result.rows;
+        
         res.json(result.rows);
     } catch (error) {
         console.error('Error executing query', error);
@@ -73,6 +78,31 @@ app.get('/details', async (req, res) => {
     }
 });
 
+app.get('/spatial', async (req, res) => {
+    try {
+        // 等待 detailsData 數據更新
+        await new Promise(resolve => setTimeout(resolve, 100)); // 延遲 100 毫秒
+
+        const selectedRegion = req.query.region;
+        // const selectedCase = req.query.case;
+        // console.log("selectedRegion: "+selectedRegion);
+        // console.log("selectedCase: "+selectedCase);
+        const caseseqs = detailsData.map(item => item.caseseq).join(','); // Array
+        // console.log("detailsData: "+detailsData[0].caseseq);
+        console.log("caseseqs: "+caseseqs);
+        const result = await pool.query(`
+            select tag,ST_AsGeoJSON(geom) as geomjson
+            from floodarea
+            where regioncode = $1
+            and caseseq IN (${caseseqs});
+        `, [selectedRegion]);
+        // console.log("result: "+result.rows);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error executing query', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);

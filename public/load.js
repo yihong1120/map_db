@@ -81,19 +81,6 @@ regionSelect.addEventListener('change', function () {
 
     const table = document.querySelector(".table")
     initTableAndChart(table,myChart);
-    // for (let i = 1; i < 5; i++) {
-    //     //初始化表格
-    //     table.rows[i].cells[1].textContent = "x";
-    //     table.rows[i].cells[2].textContent = "x";
-    //     table.rows[i].cells[3].textContent = "x";
-    //     table.rows[i].cells[4].textContent = "x";
-
-    //     //初始化chart
-    //     myChart.data.datasets[i-1].label = "";
-    //     myChart.data.datasets[i-1].data = [];
-    // }
-    // myChart.update();
-
     // Fetch cases for the selected region
     fetch(`/cases?region=${selectedRegion}`)
         .then(response => response.json())
@@ -124,19 +111,6 @@ caseSelect.addEventListener('change', function () {
     
     const table = document.querySelector(".table")
     initTableAndChart(table,myChart);
-    // for (let i = 1; i < 5; i++) {
-    //     //初始化表格
-    //     table.rows[i].cells[1].textContent = "x";
-    //     table.rows[i].cells[2].textContent = "x";
-    //     table.rows[i].cells[3].textContent = "x";
-    //     table.rows[i].cells[4].textContent = "x";
-
-    //     //初始化chart
-    //     myChart.data.datasets[i-1].label = "";
-    //     myChart.data.datasets[i-1].data = [];
-    // }
-    // myChart.update();
-
     // Fetch details for the selected case in the selected region
     fetch(`/details?region=${selectedRegion}&case=${selectedCase}`)
         .then(response => response.json())
