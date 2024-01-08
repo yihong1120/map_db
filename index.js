@@ -91,13 +91,13 @@ app.get('/spatial', async (req, res) => {
         // console.log("detailsData: "+detailsData[0].caseseq);
         console.log("caseseqs: "+caseseqs);
         const result = await pool.query(`
-            select tag,ST_AsGeoJSON(geom) as geomjson
+            select caseseq,tag,ST_AsGeoJSON(geom) as geomjson
             from floodarea
             where regioncode = $1
             and caseseq IN (${caseseqs});
         `, [selectedRegion]);
         // console.log("result: "+result.rows);
-        res.json(result.rows);
+        res.json({resultRows: result.rows, detailsData: detailsData});
     } catch (error) {
         console.error('Error executing query', error);
         res.status(500).send('Internal Server Error');

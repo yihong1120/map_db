@@ -16,21 +16,42 @@ caseSelect.addEventListener('change',function(){
     fetch(`/spatial?region=${selectedRegion}&case=${selectedCase}`)
     .then(response => response.json())
     .then(data => {
+        const resultRows = data.resultRows;
+        const detailsData = data.detailsData;
         //將空間數據加到地圖
-        data.forEach(feature => {
+        resultRows.forEach((feature, index) => {
+            // console.log("data: "+resultRows);
             // console.log(feature.geomjson);
             const geometry = JSON.parse(feature.geomjson);
+            // console.log("index:"+index);
+            // console.log("feature.caseseq: "+feature.caseseq);
+            console.log("selectedCase: "+selectedCase);
+            // console.log("detailsData[1].caseseq: "+detailsData[1].caseseq);
+            // console.log("detailsData[2].caseseq: "+detailsData[2].caseseq);
+            // console.log("detailsData[3].caseseq: "+detailsData[3].caseseq);
+            let color;
+            // 根據 case 設置不同的顏色
+            if (feature.caseseq == selectedCase){
+                color = 'red';
+            }else if (feature.caseseq == detailsData[1].caseseq){
+                color = 'orange';
+            }else if (feature.caseseq == detailsData[2].caseseq){
+                color = 'blue';
+            }else if (feature.caseseq == detailsData[3].caseseq){
+                color = 'green';
+            }else {
+                color = 'gray'; // 預設為灰色
+                console.log("feature.caseseq: "+feature.caseseq);
+            }
+            
             L.geoJSON(geometry, {
-                style: function () {
-                    return {
-                        color: 'red',
-                        weight: 2,
-                        opacity: 1
-                    };
+                style: {
+                    color: color,
+                    weight: 2,
+                    opacity: 1
                 }
             }).addTo(map);
         });
-        // console.log('Data:', data);
     });
 });
 
