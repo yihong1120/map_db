@@ -6,29 +6,33 @@ var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 L.control.scale().addTo(map);
 
+var baseMaps = {
+    "OpenStreetMap": osm,
+};
+//初始化layerControl
+var layerControl = L.control.layers(baseMaps).addTo(map);//https://leafletjs.com/examples/layers-control/
+
 const regionSelect = document.getElementById('Region');
 const caseSelect = document.getElementById('Case');
+
 caseSelect.addEventListener('change',function(){
     initMAP();
-        // new Promise(resolve => setTimeout(resolve, 100)); // 延遲 100 毫秒
     const selectedRegion = regionSelect.value;
     const selectedCase = caseSelect.value;
+
     fetch(`/spatial?region=${selectedRegion}&case=${selectedCase}`)
     .then(response => response.json())
     .then(data => {
         const resultRows = data.resultRows;
         const detailsData = data.detailsData;
+
+        // 創建一個物件來存儲各個 caseseq 的 featureGroup
+        const caseseqGroups = {};
+
         //將空間數據加到地圖
         resultRows.forEach((feature, index) => {
-            // console.log("data: "+resultRows);
-            // console.log(feature.geomjson);
+
             const geometry = JSON.parse(feature.geomjson);
-            // console.log("index:"+index);
-            // console.log("feature.caseseq: "+feature.caseseq);
-            console.log("selectedCase: "+selectedCase);
-            // console.log("detailsData[1].caseseq: "+detailsData[1].caseseq);
-            // console.log("detailsData[2].caseseq: "+detailsData[2].caseseq);
-            // console.log("detailsData[3].caseseq: "+detailsData[3].caseseq);
             let color;
             // 根據 case 設置不同的顏色
             if (feature.caseseq == selectedCase){
@@ -43,15 +47,63 @@ caseSelect.addEventListener('change',function(){
                 color = 'gray'; // 預設為灰色
                 console.log("feature.caseseq: "+feature.caseseq);
             }
-            
-            L.geoJSON(geometry, {
+            /*方法1*/
+            // let tag = feature.tag;
+            // L.geoJSON(geometry, {
+            //     style: {
+            //         color: color,
+            //         weight: 2,
+            //         opacity: 1
+            //     },
+            //     onEachFeature: function (feature, layer) {
+            //         // 為每個圖層添加點擊事件
+            //         // console.log("feature.tag: "+feature.tag); // undefined
+            //         layer.on('click', function (e) {
+            //             // 使用 openPopup() 顯示 tag
+            //             layer.bindPopup(tag).openPopup();
+            //         });
+            //     }
+            // }).addTo(map);
+
+            // 如果還沒有為該 caseseq 創建 featureGroup，就創建一個
+            if (!caseseqGroups[feature.caseseq]) {
+                caseseqGroups[feature.caseseq] = L.featureGroup.subGroup();
+                // 將 featureGroup 添加到地圖
+                caseseqGroups[feature.caseseq].addTo(map);
+            }
+
+            /*方法2*/
+            const geoJSONLayer = L.geoJSON(geometry, {
                 style: {
                     color: color,
                     weight: 2,
                     opacity: 1
                 }
-            }).addTo(map);
+            }).bindPopup(feature.tag)
+                // function (layer) {
+                // console.log("layer.feature.properties.description: "+feature.tag);    
+                // return feature.tag;
+                // })
+            ;
+
+            // 添加 GeoJSON 圖層到 featureGroup
+            geoJSONLayer.addTo(caseseqGroups[feature.caseseq]);
+
         });
+
+        // 將每個 caseseq 的 featureGroup 添加到 Layer Control
+        Object.keys(caseseqGroups).forEach(caseseq => {
+            // 找到相應的 feature 對象
+            const correspondingFeature = detailsData.find(feature => feature.caseseq === parseInt(caseseq));
+            // 獲取 casename 和 color
+            // const casename = correspondingFeature ? correspondingFeature.casename : `Case ${caseseq}`;
+            // const color = getColorForCase(caseseq);  // 這裡應根據 caseseq 獲取顏色的方法，可以自己實現
+            const casename = correspondingFeature ? correspondingFeature.casename : `Case ${caseseq}`;
+            // 添加 GeoJSON 圖層到 featureGroup
+            // layerControl.addOverlay(caseseqGroups[caseseq], `red: ${casename}`);
+            layerControl.addOverlay(caseseqGroups[caseseq], casename);
+        });
+
     });
 });
 
@@ -64,68 +116,17 @@ function initMAP() {
             map.removeLayer(layer);
         }
     });
+    
+    //清空 layerControl
+    map.removeControl(layerControl);
+    layerControl = L.control.layers(baseMaps).addTo(map);
+    // console.log("重置 layerControl");
 }
+
+
 /*
-//動態變色
-style: function (feature) {
-    const category = feature.properties.category;
-    let color;
 
-    // 根據 category 設置不同的顏色
-    if (category === 'A') {
-        color = 'red';
-    } else if (category === 'B') {
-        color = 'blue';
-    } else {
-        color = 'green';
-    }
-
-    return {
-        color: color,
-        weight: 2,
-        opacity: 0.5,
-        fillOpacity: 0
-    };
-}
-*/
-
-
-//------------------舊方法KML------------------
-/*
-// Load kml file 主要事件
-const select = document.getElementById("kmlFileSelect");
-
-var baseMaps = {
-    "OpenStreetMap": osm,
-};
-//初始化layerControl
-var layerControl = L.control.layers(baseMaps).addTo(map);//https://leafletjs.com/examples/layers-control/
-// 檢查layerControl裡面有什麼
-// console.log("layerControl:"+layerControl); // [object Object]
-// console.log("layerControl._layers:"+layerControl._layers); // [object Object]
-// console.log("layerControl._layers.length:"+layerControl._layers.length); // 1
-// console.log("layerControl._layers[0]:"+layerControl._layers[0]); // undefined
-// console.log("layerControl._layers[0].length:"+layerControl._layers[0].length); // undefined
-
-// console.log("layerControl Object: ");
-// // 使用 Object.keys 取得物件的所有 key
-// Object.keys(layerControl).forEach(key => {
-//     console.log(`${key}:`, layerControl[key]);
-// });
-
-var kmlLayers0;
-var kmlLayers1;
-var kmlLayers2;
-var kmlLayers3;
 addEventListener("change", function (event) {
-    const targetId = event.target.id;
-    if (targetId === "Region" || targetId === "kmlFileSelect") {
-        //清空地圖上的KML
-        map.eachLayer(function (layer) {
-            if (layer instanceof L.KML) { //判斷是否為KML圖層
-                map.removeLayer(layer);
-            }
-        });
 
         //重置layerControl
         if (layerControl) {
@@ -280,26 +281,6 @@ addEventListener("change", function (event) {
                             map.fitBounds(bounds);
                         })
                 };
-                console.log("相似事件1 2 3 end");
-
-            }
-
-            // 確認監聽器是否已經被綁定，避免重複綁定
-            if (!window.truefalse) {
-
-                // 監聽自定義事件，當資料更新時執行相應的處理
-                console.log("監聽 region: " + region);
-                document.addEventListener('dataUpdated', function () {
-                    // handleDataUpdate(region)包在function裡面，避免立刻執行，否則第一次執行會出錯
-                    handleDataUpdate(region)
-                }
-                );
-
-                // 最初加載時執行一次處理
-                // handleDataUpdate(region);
-
-                // 標記監聽器已經被綁定
-                window.truefalse = true; // 這行會讓監聽器只執行一次
 
             }
 
