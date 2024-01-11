@@ -1,7 +1,8 @@
 const express = require('express'); // import express
 const { Pool } = require('pg'); // import pg module
 const app = express(); // initialize express
-const port = 3000;
+// const port = 3000; //localhost
+const port = process.env.PORT || 5000;
 
 // 配置 PostgreSQL 連接
 const pool = new Pool({
