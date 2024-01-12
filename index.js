@@ -2,13 +2,22 @@ const express = require('express'); // import express
 const { Pool } = require('pg'); // import pg module
 const app = express(); // initialize express
 // const port = 3000; //localhost
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5000; //heroku
 
-// 配置 PostgreSQL 連接
+// 配置 PostgreSQL 連接(localhost)
+// const pool = new Pool({
+//     user: 'ann',
+//     host: 'localhost',
+//     database: 'flood',
+//     password: '0000',
+//     port: 5432, // PostgreSQL port
+// });
+
+// 配置 PostgreSQL 連接(gcp)
 const pool = new Pool({
-    user: 'ann',
-    host: 'localhost',
-    database: 'flood',
+    user: 'postgres',
+    host: '34.31.70.151',
+    database: 'flooddb',
     password: '0000',
     port: 5432, // PostgreSQL port
 });
@@ -106,5 +115,5 @@ app.get('/spatial', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+    console.log(`Server is running at http://localhost:${port}`); //localhost
 });
